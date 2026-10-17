@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Radio</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Radio">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="shortcut icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    color: #e6e6e6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8b949e;
+    margin-bottom: 12px;
+  }
+  .status {
+    font-size: 0.85rem;
+    color: #58a6ff;
+    margin-bottom: 24px;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .station {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+    color: #fff;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .station:active { transform: scale(0.97); }
+  .station.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .station .freq {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .station .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3fb950;
+    display: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .station.playing .dot { display: inline-block; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .station .name {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-top: 6px;
+  }
+  .station .note {
+    font-size: 0.8rem;
+    color: #58a6ff;
+    margin-top: 6px;
+  }
+  .hint {
+    margin-top: 24px;
+    font-size: 0.8rem;
+    color: #484f58;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <h1>My Radio</h1>
+  <div class="status" id="status">Tap a station to play</div>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CFNYFM-MP3?args=web_02" data-name="102.1 The Edge">
+    <div class="freq"><span class="dot"></span>102.1 The Edge</div>
+    <div class="name">Toronto &middot; Alternative Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CILQFM-MP3?args=web_02" data-name="Q107">
+    <div class="freq"><span class="dot"></span>Q107</div>
+    <div class="name">Toronto &middot; 107.1 FM &middot; Classic Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/CKLWAMAAC.aac" data-name="AM 800 CKLW">
+    <div class="freq"><span class="dot"></span>AM 800 CKLW</div>
+    <div class="name">Windsor &middot; News / Talk</div>
+    <div class="note">Coast to Coast AM overnights</div>
+  </button>
+
+  <div class="hint">Tap again to stop.<br>More stations coming.</div>
+
+<script>
+(function () {
+  var audio = new Audio();
+  audio.preload = 'none';
+  var current = null;
+  var status = document.getElementById('status');
+
+  function stopAll() {
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    var btns = document.querySelectorAll('.station');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('playing');
+    current = null;
+  }
+
+  var btns = document.querySelectorAll('.station');
+  for (var i = 0; i < btns.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () {
+        if (current === btn) {
+          stopAll();
+          status.textContent = 'Tap a station to play';
+          return;
+        }
+        stopAll();
+        current = btn;
+        status.textContent = 'Connecting to ' + btn.getAttribute('data-name') + '\u2026';
+        audio.src = btn.getAttribute('data-stream');
+        var p = audio.play();
+        if (p && p.then) {
+          p.then(function () {
+            btn.classList.add('playing');
+            status.textContent = 'Now playing: ' + btn.getAttribute('data-name');
+          }).catch(function () {
+            status.textContent = 'Could not start ' + btn.getAttribute('data-name');
+            stopAll();
+          });
+        } else {
+          btn.classList.add('playing');
+          status.textContent = 'Now playing: ' + btn.getAttribute('data-name');
+        }
+      });
+    })(btns[i]);
+  }
+
+  audio.addEventListener('error', function () {
+    if (current) {
+      status.textContent = 'Stream failed to load';
+      stopAll();
+    }
+  });
+})();
+</script>
+</body>
+</html>
