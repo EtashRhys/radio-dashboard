@@ -10,13 +10,17 @@ One HTML file with your favorite radio stations as big tap targets. Hit a statio
 
 It uses the stations' direct stream URLs, so there's no ad-loaded web player in the way — audio starts immediately.
 
-## Use it
+## Get it on your phone (2 minutes)
 
-No build, no dependencies, no server needed.
+Opening the downloaded file directly won't work right — the page needs to live on the web so your phone can install it as an app. Easiest free way is GitHub Pages:
 
-1. Open `index.html` in any browser, or host it anywhere static (GitHub Pages works).
-2. On your phone: open the page in Chrome (Android) or Safari (iPhone) → **Add to Home Screen**. It installs as a standalone app with its own icon.
-3. Tap a station. Done.
+1. **Fork this repo** (the Fork button, top right on GitHub).
+2. In your fork, go to **Settings → Pages**. Under "Build and deployment", set Source to **Deploy from a branch**, Branch to **main**, then **Save**.
+3. Wait about a minute, then open `https://YOUR-USERNAME.github.io/radio-dashboard/` — that's your radio, live on the web.
+4. On your phone, open that URL in Chrome (Android) or Safari (iPhone) → menu → **Add to Home Screen**.
+5. Tap the new home-screen icon, tap a station. Done.
+
+No build, no dependencies, no server. Any static host works too (Netlify, Cloudflare Pages, your own box) — just upload the files and open the URL on your phone.
 
 ## Make it yours
 
