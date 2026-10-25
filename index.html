@@ -93,6 +93,31 @@
     color: #58a6ff;
     margin-top: 6px;
   }
+  .tg {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .tg-label {
+    font-size: 0.9rem;
+    color: #8b949e;
+    margin-bottom: 10px;
+  }
+  .tg iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    background: #000;
+  }
+  .tg-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #58a6ff;
+    text-decoration: none;
+  }
   .hint {
     margin-top: 24px;
     font-size: 0.8rem;
@@ -122,14 +147,22 @@
     <div class="note">Coast to Coast AM overnights</div>
   </button>
 
+  <div class="tg">
+    <div class="tg-label">Typical Gamer &middot; Live on YouTube</div>
+    <iframe id="tg-player" src="https://www.youtube.com/embed/live_stream?channel=UC2wKfjlioOCLP4xQMOWNcgg&amp;enablejsapi=1" title="Typical Gamer live stream" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <a class="tg-link" href="https://www.youtube.com/@TypicalGamer" target="_blank" rel="noopener">Open Typical Gamer on YouTube</a>
+  </div>
+
   <div class="hint">Tap again to stop.<br>More stations coming.</div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 (function () {
   var audio = new Audio();
   audio.preload = 'none';
   var current = null;
   var status = document.getElementById('status');
+  var tgPlayer = null;
 
   function stopAll() {
     try { audio.pause(); } catch (e) {}
@@ -139,11 +172,15 @@
     for (var i = 0; i < btns.length; i++) btns[i].classList.remove('playing');
     current = null;
   }
+  function stopVideo() {
+    try { if (tgPlayer && tgPlayer.pauseVideo) tgPlayer.pauseVideo(); } catch (e) {}
+  }
 
   var btns = document.querySelectorAll('.station');
   for (var i = 0; i < btns.length; i++) {
     (function (btn) {
       btn.addEventListener('click', function () {
+        stopVideo();
         if (current === btn) {
           stopAll();
           status.textContent = 'Tap a station to play';
@@ -176,6 +213,16 @@
       stopAll();
     }
   });
+  window.onYouTubeIframeAPIReady = function () {
+    try {
+      tgPlayer = new YT.Player('tg-player', { events: { 'onStateChange': function (e) {
+        if (e.data === YT.PlayerState.PLAYING) {
+          stopAll();
+          status.textContent = 'Watching: Typical Gamer';
+        }
+      } } });
+    } catch (err) {}
+  };
 })();
 </script>
 </body>
