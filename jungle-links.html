@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jungle's Links</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jungle's Links">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    color: #e6e6e6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8b949e;
+    margin-bottom: 12px;
+  }
+  .status {
+    font-size: 0.85rem;
+    color: #58a6ff;
+    margin-bottom: 24px;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .station {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+    color: #fff;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .station:active { transform: scale(0.97); }
+  .station.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .station .freq {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .station .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3fb950;
+    display: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .station.playing .dot { display: inline-block; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .station .name {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-top: 6px;
+  }
+  .hint {
+    margin-top: 24px;
+    font-size: 0.8rem;
+    color: #484f58;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <h1>Jungle's Links</h1>
+  <div class="status" id="status">Tap something to open</div>
+
+  <a class="station" href="https://www.youtube.com/@TheBasementYard" target="_blank" rel="noopener">
+    <div class="freq">The Basement Yard</div>
+    <div class="name">YouTube &middot; Comedy podcast</div>
+  </a>
+
+  <a class="station" href="https://www.youtube.com/southpark" target="_blank" rel="noopener">
+    <div class="freq">South Park</div>
+    <div class="name">YouTube &middot; Official channel &middot; Clips</div>
+  </a>
+
+  <a class="station" href="https://www.youtube.com/@SantagatoStudios" target="_blank" rel="noopener">
+    <div class="freq">Santagato Studios</div>
+    <div class="name">YouTube &middot; Comedy</div>
+  </a>
+
+  <button class="station" id="hot97" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/WQHTFMAAC_SC" data-name="HOT 97">
+    <div class="freq"><span class="dot"></span>HOT 97</div>
+    <div class="name">New York &middot; Hip-Hop</div>
+  </button>
+
+  <div class="hint">Tap HOT 97 again to stop.</div>
+
+<script>
+(function () {
+  var audio = new Audio();
+  audio.preload = 'none';
+  var current = null;
+  var status = document.getElementById('status');
+
+  function stopAll() {
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    var btn = document.getElementById('hot97');
+    if (btn) btn.classList.remove('playing');
+    current = null;
+  }
+
+  var btn = document.getElementById('hot97');
+  btn.addEventListener('click', function () {
+    if (current === btn) {
+      stopAll();
+      status.textContent = 'Tap something to open';
+      return;
+    }
+    stopAll();
+    current = btn;
+    status.textContent = 'Connecting to HOT 97\u2026';
+    audio.src = btn.getAttribute('data-stream');
+    var p = audio.play();
+    if (p && p.then) {
+      p.then(function () {
+        btn.classList.add('playing');
+        status.textContent = 'Now playing: HOT 97';
+      }).catch(function () {
+        status.textContent = 'Could not start HOT 97';
+        stopAll();
+      });
+    } else {
+      btn.classList.add('playing');
+      status.textContent = 'Now playing: HOT 97';
+    }
+  });
+
+  audio.addEventListener('error', function () {
+    if (current) {
+      status.textContent = 'Stream failed to load';
+      stopAll();
+    }
+  });
+})();
+</script>
+</body>
+</html>
