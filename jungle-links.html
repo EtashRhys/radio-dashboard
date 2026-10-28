@@ -19,7 +19,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 24px;
   }
   h1 {
@@ -105,6 +105,64 @@
     text-align: center;
     line-height: 1.6;
   }
+  .yt-card {
+    width: 100%;
+    max-width: 420px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    cursor: default;
+    margin-bottom: 16px;
+  }
+  .yt-card:active { transform: none; }
+  .yt-card.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .yt-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px 12px;
+  }
+  .yt-card-label { font-size: 0.9rem; color: #8b949e; }
+  .yt-live-btn {
+    flex: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    background: #e11d48;
+    border: 1px solid #e11d48;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .yt-live-btn.live-mode { background: #2f7de1; border-color: #2f7de1; }
+  .yt-live-btn.live-mode .yt-live-dot { display: none; }
+  .yt-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .yt-card iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; }
+  #yt-player-live-by, #yt-player-live-ss { display: none; }
+  .yt-card .yt-link {
+    display: block;
+    text-align: center;
+    color: #58a6ff;
+    text-decoration: none;
+    padding: 12px 12px 16px;
+    font-size: 0.9rem;
+  }
 </style>
 </head>
 <body>
@@ -116,20 +174,24 @@
     <div class="name">New York &middot; Hip-Hop</div>
   </button>
 
-  <a class="station" href="https://www.youtube.com/@TheBasementYard" target="_blank" rel="noopener">
-    <div class="freq">The Basement Yard</div>
-    <div class="name">YouTube &middot; Comedy podcast</div>
-  </a>
+  <div class="yt-card" id="yt-card-by">
+    <div class="yt-card-head"><div class="yt-card-label">The Basement Yard</div><button class="yt-live-btn" id="yt-live-btn-by" type="button"><span class="yt-live-dot"></span><span id="yt-live-btn-text-by">Check if live</span></button></div>
+    <iframe id="yt-player-by" src="https://www.youtube.com/embed/videoseries?list=UU_a6c3KLo9reMOqn2pbvMqg&amp;enablejsapi=1" title="The Basement Yard latest video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <iframe id="yt-player-live-by" src="https://www.youtube.com/embed/live_stream?channel=UC_a6c3KLo9reMOqn2pbvMqg&amp;enablejsapi=1" title="The Basement Yard live feed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <a class="yt-link" href="https://www.youtube.com/@TheBasementYard" target="_blank" rel="noopener">Open The Basement Yard on YouTube</a>
+  </div>
 
   <a class="station" href="https://www.lookmovie2.to/shows/view/0121955-south-park-1997" target="_blank" rel="noopener">
     <div class="freq">South Park</div>
     <div class="name">Look👀</div>
   </a>
 
-  <a class="station" href="https://www.youtube.com/@SantagatoStudios" target="_blank" rel="noopener">
-    <div class="freq">Santagato Studios</div>
-    <div class="name">YouTube &middot; Comedy</div>
-  </a>
+  <div class="yt-card" id="yt-card-ss">
+    <div class="yt-card-head"><div class="yt-card-label">Santagato Studios</div><button class="yt-live-btn" id="yt-live-btn-ss" type="button"><span class="yt-live-dot"></span><span id="yt-live-btn-text-ss">Check if live</span></button></div>
+    <iframe id="yt-player-ss" src="https://www.youtube.com/embed/videoseries?list=UUvNGMZ-FXlihsMECs-J1LUw&amp;enablejsapi=1" title="Santagato Studios latest video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <iframe id="yt-player-live-ss" src="https://www.youtube.com/embed/live_stream?channel=UCvNGMZ-FXlihsMECs-J1LUw&amp;enablejsapi=1" title="Santagato Studios live feed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <a class="yt-link" href="https://www.youtube.com/@SantagatoStudios" target="_blank" rel="noopener">Open Santagato Studios on YouTube</a>
+  </div>
 
   <div class="hint">Tap HOT 97 again to stop.</div>
 
@@ -162,6 +224,7 @@
     window.radioViz.current = null;
     setViz('idle', false);
   }
+  window.jlStopAudio = stopAll;
   function onStarted() {
     btn.classList.add('playing');
     status.textContent = 'Now playing: HOT 97';
@@ -240,6 +303,8 @@
     }
   }
   btn.addEventListener('click', function () {
+    if (window.jlPauseVideos) window.jlPauseVideos();
+    if (window.jlRevertCards) window.jlRevertCards();
     if (current === btn) { stopAll(); status.textContent = 'Tap something to open'; return; }
     stopAll();
     current = btn;
@@ -313,6 +378,86 @@
     }
   }
   draw();
+})();
+</script>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function () {
+  var status = document.getElementById('status');
+  function stopAudio() { try { if (window.jlStopAudio) window.jlStopAudio(); } catch (e) {} }
+  function makeCard(suffix, name) {
+    return {
+      suffix: suffix, name: name, liveMode: false,
+      card: document.getElementById('yt-card-' + suffix),
+      liveBtn: document.getElementById('yt-live-btn-' + suffix),
+      liveBtnText: document.getElementById('yt-live-btn-text-' + suffix),
+      mainFrame: document.getElementById('yt-player-' + suffix),
+      liveFrame: document.getElementById('yt-player-live-' + suffix),
+      latestPlayer: null, livePlayer: null
+    };
+  }
+  var cards = [makeCard('by', 'The Basement Yard'), makeCard('ss', 'Santagato Studios')];
+  function pauseCard(c) {
+    try { if (c.latestPlayer && c.latestPlayer.pauseVideo) c.latestPlayer.pauseVideo(); } catch (e) {}
+    try { if (c.livePlayer && c.livePlayer.pauseVideo) c.livePlayer.pauseVideo(); } catch (e) {}
+  }
+  function pauseAllVideos() { for (var i = 0; i < cards.length; i++) pauseCard(cards[i]); }
+  function showLatest(c) {
+    c.liveMode = false;
+    pauseCard(c);
+    if (c.liveFrame) c.liveFrame.style.display = 'none';
+    if (c.mainFrame) c.mainFrame.style.display = 'block';
+    if (c.liveBtn) c.liveBtn.classList.remove('live-mode');
+    if (c.liveBtnText) c.liveBtnText.textContent = 'Check if live';
+    if (c.card) c.card.classList.remove('playing');
+    status.textContent = 'Tap something to open';
+  }
+  function revertAllCards() { for (var i = 0; i < cards.length; i++) showLatest(cards[i]); }
+  window.jlPauseVideos = pauseAllVideos;
+  window.jlRevertCards = revertAllCards;
+  function showLive(c) {
+    for (var i = 0; i < cards.length; i++) { if (cards[i] !== c) showLatest(cards[i]); }
+    stopAudio();
+    c.liveMode = true;
+    try { if (c.latestPlayer && c.latestPlayer.pauseVideo) c.latestPlayer.pauseVideo(); } catch (e) {}
+    if (c.mainFrame) c.mainFrame.style.display = 'none';
+    if (c.liveFrame) c.liveFrame.style.display = 'block';
+    if (c.liveBtn) c.liveBtn.classList.add('live-mode');
+    if (c.liveBtnText) c.liveBtnText.textContent = 'Back to latest';
+    if (c.card) c.card.classList.remove('playing');
+    status.textContent = 'Live feed — tap play to watch';
+    try { if (c.livePlayer && c.livePlayer.playVideo) c.livePlayer.playVideo(); } catch (e) {}
+  }
+  for (var j = 0; j < cards.length; j++) {
+    (function (c) {
+      if (c.liveBtn) {
+        c.liveBtn.addEventListener('click', function (e) {
+          if (e && e.stopPropagation) e.stopPropagation();
+          if (!c.liveMode) { showLive(c); }
+          else { showLatest(c); }
+        });
+      }
+    })(cards[j]);
+  }
+  window.onYouTubeIframeAPIReady = function () {
+    try {
+      for (var k = 0; k < cards.length; k++) {
+        (function (c) {
+          var handler = function (e) {
+            if (e.data === YT.PlayerState.PLAYING) {
+              stopAudio();
+              for (var m = 0; m < cards.length; m++) { if (cards[m] !== c) showLatest(cards[m]); }
+              if (c.card) c.card.classList.add('playing');
+              status.textContent = 'Watching: ' + c.name;
+            } else if (c.card) { c.card.classList.remove('playing'); }
+          };
+          c.latestPlayer = new YT.Player('yt-player-' + c.suffix, { events: { 'onStateChange': handler } });
+          c.livePlayer = new YT.Player('yt-player-live-' + c.suffix, { events: { 'onStateChange': handler } });
+        })(cards[k]);
+      }
+    } catch (err) {}
+  };
 })();
 </script>
 
