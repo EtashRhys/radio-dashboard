@@ -163,10 +163,33 @@
     padding: 12px 12px 16px;
     font-size: 0.9rem;
   }
+  .page-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .page-head h1 { margin-bottom: 0; }
+  .share-pill {
+    flex: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    background: #2f7de1;
+    border: 1px solid #2f7de1;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
-  <h1>Jungle's Links</h1>
+  <div class="page-head"><h1>Jungle's Links</h1><a class="share-pill" href="mailto:?subject=Jungle%27s%20Links&amp;body=Jungle%27s%20Links%0Ahttps%3A%2F%2Fetashrhys.github.io%2Fradio-dashboard%2Fjungle-links.html">Share</a></div>
   <div class="status" id="status">Tap something to open</div>
 
   <button class="station" id="hot97" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/WQHTFMAAC_SC" data-name="HOT 97">
