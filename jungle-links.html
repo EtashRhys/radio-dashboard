@@ -57,15 +57,19 @@
     border-color: #58a6ff;
     box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
   }
-  #hot97 {
-    background: #ff7a29;
-    border-color: #ff7a29;
+  #hot97 { position: relative; overflow: hidden; }
+  #hot97 .viz {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
   }
-  #hot97 .freq { color: #1a0a00; }
-  #hot97 .name { color: #4a2400; }
-  #hot97.playing {
-    border-color: #ffc27a;
-    box-shadow: 0 0 24px rgba(255, 122, 41, 0.45);
+  #hot97 .freq, #hot97 .name {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   }
   .station .freq {
     font-size: 2rem;
@@ -131,53 +135,186 @@
 
 <script>
 (function () {
+  var status = document.getElementById('status');
+  var btn = document.getElementById('hot97');
   var audio = new Audio();
   audio.preload = 'none';
   var current = null;
-  var status = document.getElementById('status');
+  var audioCtx = null, analyser = null, audioElHasGraph = false;
+  var vizMode = 'idle';
+  var syncState = 'unknown';
+  window.radioViz = { playing: false, analyser: null, mode: 'idle', current: null };
+  var clickToken = 0;
+  var fellBackToken = -1;
 
+  function setViz(mode, playing) {
+    vizMode = mode;
+    window.radioViz.mode = mode;
+    window.radioViz.playing = playing;
+    window.radioViz.analyser = (mode === 'sync') ? analyser : null;
+  }
   function stopAll() {
     try { audio.pause(); } catch (e) {}
     audio.removeAttribute('src');
     try { audio.load(); } catch (e) {}
-    var btn = document.getElementById('hot97');
-    if (btn) btn.classList.remove('playing');
+    btn.classList.remove('playing');
     current = null;
+    window.radioViz.current = null;
+    setViz('idle', false);
   }
-
-  var btn = document.getElementById('hot97');
-  btn.addEventListener('click', function () {
-    if (current === btn) {
-      stopAll();
-      status.textContent = 'Tap something to open';
+  function onStarted() {
+    btn.classList.add('playing');
+    status.textContent = 'Now playing: HOT 97';
+  }
+  function startPlain() {
+    audio.removeAttribute('crossorigin');
+    audio.src = btn.getAttribute('data-stream');
+    var p = audio.play();
+    if (p && p.then) {
+      p.then(function () { setViz('plain', true); onStarted(); }).catch(function () {
+        status.textContent = 'Could not start HOT 97';
+        stopAll();
+      });
+    } else { setViz('plain', true); onStarted(); }
+  }
+  function fallbackToPlain(token) {
+    if (token !== clickToken || token === fellBackToken) return;
+    fellBackToken = token;
+    syncState = 'plain';
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    audio = new Audio();
+    audio.preload = 'none';
+    audioElHasGraph = false;
+    bindError(audio);
+    status.textContent = 'Connecting to HOT 97\u2026';
+    startPlain();
+  }
+  function bindError(el) {
+    el.addEventListener('error', function () {
+      if (!current) return;
+      if (vizMode === 'sync' && syncState !== 'sync') {
+        fallbackToPlain(clickToken);
+      } else {
+        status.textContent = 'Stream failed to load';
+        stopAll();
+      }
+    });
+  }
+  bindError(audio);
+  function attemptSync() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!analyser) analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      if (!audioElHasGraph) {
+        var src = audioCtx.createMediaElementSource(audio);
+        src.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        audioElHasGraph = true;
+      }
+      if (audioCtx.resume) audioCtx.resume();
+    } catch (e) {
+      syncState = 'plain';
+      startPlain();
       return;
     }
-    stopAll();
-    current = btn;
-    status.textContent = 'Connecting to HOT 97\u2026';
+    var token = clickToken;
+    audio.crossOrigin = 'anonymous';
     audio.src = btn.getAttribute('data-stream');
     var p = audio.play();
     if (p && p.then) {
       p.then(function () {
-        btn.classList.add('playing');
-        status.textContent = 'Now playing: HOT 97';
+        syncState = 'sync';
+        setViz('sync', true);
+        onStarted();
       }).catch(function () {
-        status.textContent = 'Could not start HOT 97';
-        stopAll();
+        if (syncState !== 'sync') fallbackToPlain(token);
+        else { status.textContent = 'Could not start HOT 97'; stopAll(); }
       });
     } else {
-      btn.classList.add('playing');
-      status.textContent = 'Now playing: HOT 97';
+      syncState = 'sync';
+      setViz('sync', true);
+      onStarted();
     }
-  });
-
-  audio.addEventListener('error', function () {
-    if (current) {
-      status.textContent = 'Stream failed to load';
-      stopAll();
-    }
+  }
+  btn.addEventListener('click', function () {
+    if (current === btn) { stopAll(); status.textContent = 'Tap something to open'; return; }
+    stopAll();
+    current = btn;
+    window.radioViz.current = btn;
+    clickToken++;
+    status.textContent = 'Connecting to HOT 97\u2026';
+    if (syncState === 'plain') { setViz('plain', false); startPlain(); }
+    else { setViz('sync', false); attemptSync(); }
   });
 })();
 </script>
+
+<script>
+(function () {
+  var btn = document.getElementById('hot97');
+  var c = document.createElement('canvas');
+  c.className = 'viz';
+  btn.appendChild(c);
+  var ctx = c.getContext('2d');
+  var dpr = 1, w = 0, h = 0, cur = [];
+  var STOPS = ['#2a1200', '#ff7a29', '#ffc27a'];
+  function sizeIt() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = btn.clientWidth;
+    h = btn.clientHeight;
+    if (!w || !h) return;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    cur = [];
+  }
+  sizeIt();
+  window.addEventListener('resize', sizeIt);
+  window.addEventListener('load', sizeIt);
+  var BAR_N = 20;
+  var freqData = null;
+  function draw() {
+    requestAnimationFrame(draw);
+    var viz = window.radioViz || {};
+    var t = performance.now() / 1000;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    var active = (viz.current === btn && viz.playing);
+    if (!active) return;
+    var analyser = (viz.mode === 'sync') ? viz.analyser : null;
+    if (analyser) {
+      if (!freqData || freqData.length !== analyser.frequencyBinCount) freqData = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(freqData);
+    }
+    var step = w / BAR_N;
+    var bw = step * 0.62;
+    var grad = ctx.createLinearGradient(0, h, 0, 0);
+    grad.addColorStop(0, STOPS[0]);
+    grad.addColorStop(0.6, STOPS[1]);
+    grad.addColorStop(1, STOPS[2]);
+    ctx.fillStyle = grad;
+    for (var b = 0; b < BAR_N; b++) {
+      var target;
+      if (analyser && freqData) {
+        var bin = Math.floor(b * freqData.length / BAR_N);
+        target = 0.08 + (freqData[bin] / 255) * (h * 0.72);
+      } else {
+        var beat = Math.pow(Math.max(0, Math.sin(t * 2.1)), 3);
+        target = h * 0.08 + (0.5 + 0.5 * Math.sin(t * 2.6 + b * 0.55)) * (h * 0.28 + beat * h * 0.35);
+      }
+      var v = cur[b] || 0;
+      v += (target - v) * 0.35;
+      cur[b] = v;
+      var x = b * step + (step - bw) / 2;
+      var hh = Math.max(2, v);
+      ctx.fillRect(x, h - hh, bw, hh);
+    }
+  }
+  draw();
+})();
+</script>
+
 </body>
 </html>
