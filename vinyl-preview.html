@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Radio</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Radio">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="shortcut icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: radial-gradient(120% 90% at 50% 0%, #2a1c0e 0%, #0d1117 55%, #05070c 100%);
+    color: #e6e6e6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8b949e;
+    margin-bottom: 12px;
+  }
+  .status {
+    font-size: 0.85rem;
+    color: #58a6ff;
+    margin-bottom: 24px;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .station {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+    color: #fff;
+    background: rgba(22, 27, 34, 0.85);
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .station:active { transform: scale(0.97); }
+  .station.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .station .freq {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .station .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3fb950;
+    display: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .station.playing .dot { display: inline-block; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .station .name {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-top: 6px;
+  }
+  .station .note {
+    font-size: 0.8rem;
+    color: #58a6ff;
+    margin-top: 6px;
+  }
+  .tg {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .tg-label {
+    font-size: 0.9rem;
+    color: #8b949e;
+    margin-bottom: 10px;
+  }
+  .tg iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    background: #000;
+  }
+  .tg-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #58a6ff;
+    text-decoration: none;
+  }
+  .hint {
+    margin-top: 24px;
+    font-size: 0.8rem;
+    color: #484f58;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #bg3d {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  body > *:not(#bg3d) { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+  <canvas id="bg3d"></canvas>
+  <h1>My Radio</h1>
+  <div class="status" id="status">Tap a station to play</div>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CFNYFM-MP3?args=web_02" data-name="102.1 The Edge">
+    <div class="freq"><span class="dot"></span>102.1 The Edge</div>
+    <div class="name">Toronto &middot; Alternative Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CILQFM-MP3?args=web_02" data-name="Q107">
+    <div class="freq"><span class="dot"></span>Q107</div>
+    <div class="name">Toronto &middot; 107.1 FM &middot; Classic Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/CKLWAMAAC.aac" data-name="AM 800 CKLW">
+    <div class="freq"><span class="dot"></span>AM 800 CKLW</div>
+    <div class="name">Windsor &middot; News / Talk</div>
+    <div class="note">Coast to Coast AM overnights</div>
+  </button>
+
+  <div class="tg">
+    <div class="tg-label">Typical Gamer &middot; Live on YouTube</div>
+    <iframe id="tg-player" src="https://www.youtube.com/embed/live_stream?channel=UC2wKfjlioOCLP4xQMOWNcgg&amp;enablejsapi=1" title="Typical Gamer live stream" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <a class="tg-link" href="https://www.youtube.com/@TypicalGamer" target="_blank" rel="noopener">Open Typical Gamer on YouTube</a>
+  </div>
+
+  <div class="hint">Tap again to stop.<br>More stations coming.</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function () {
+  var status = document.getElementById('status');
+  var tgPlayer = null;
+  var current = null;
+  var audio = new Audio();
+  audio.preload = 'none';
+  var audioCtx = null, analyser = null, audioElHasGraph = false;
+  var vizMode = 'idle';
+  var stationState = {};
+  window.radioViz = { playing: false, analyser: null, mode: 'idle' };
+  var clickToken = 0;
+  var fellBackToken = -1;
+
+  function setViz(mode, playing) {
+    vizMode = mode;
+    window.radioViz.mode = mode;
+    window.radioViz.playing = playing;
+    window.radioViz.analyser = (mode === 'sync') ? analyser : null;
+  }
+  function stopAll() {
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    var btns = document.querySelectorAll('.station');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('playing');
+    current = null;
+    setViz('idle', false);
+  }
+  function stopVideo() {
+    try { if (tgPlayer && tgPlayer.pauseVideo) tgPlayer.pauseVideo(); } catch (e) {}
+  }
+  function onStarted(btn) {
+    btn.classList.add('playing');
+    status.textContent = 'Now playing: ' + btn.getAttribute('data-name');
+  }
+  function startPlain(btn) {
+    audio.removeAttribute('crossorigin');
+    audio.src = btn.getAttribute('data-stream');
+    var p = audio.play();
+    if (p && p.then) {
+      p.then(function () { setViz('plain', true); onStarted(btn); }).catch(function () {
+        status.textContent = 'Could not start ' + btn.getAttribute('data-name');
+        stopAll();
+      });
+    } else { setViz('plain', true); onStarted(btn); }
+  }
+  function fallbackToPlain(btn, token) {
+    if (token !== clickToken || token === fellBackToken) return;
+    fellBackToken = token;
+    var name = btn.getAttribute('data-name');
+    stationState[name] = 'plain';
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    audio = new Audio();
+    audio.preload = 'none';
+    audioElHasGraph = false;
+    bindError(audio);
+    status.textContent = 'Connecting to ' + name + '\u2026';
+    startPlain(btn);
+  }
+  function bindError(el) {
+    el.addEventListener('error', function () {
+      if (!current) return;
+      var btn = current;
+      var name = btn.getAttribute('data-name');
+      if (vizMode === 'sync' && stationState[name] !== 'sync') {
+        fallbackToPlain(btn, clickToken);
+      } else {
+        status.textContent = 'Stream failed to load';
+        stopAll();
+      }
+    });
+  }
+  bindError(audio);
+  function attemptSync(btn) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!analyser) analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      if (!audioElHasGraph) {
+        var src = audioCtx.createMediaElementSource(audio);
+        src.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        audioElHasGraph = true;
+      }
+      if (audioCtx.resume) audioCtx.resume();
+    } catch (e) {
+      stationState[btn.getAttribute('data-name')] = 'plain';
+      startPlain(btn);
+      return;
+    }
+    var token = clickToken;
+    audio.crossOrigin = 'anonymous';
+    audio.src = btn.getAttribute('data-stream');
+    var p = audio.play();
+    if (p && p.then) {
+      p.then(function () {
+        stationState[btn.getAttribute('data-name')] = 'sync';
+        setViz('sync', true);
+        onStarted(btn);
+      }).catch(function () {
+        if (stationState[btn.getAttribute('data-name')] !== 'sync') fallbackToPlain(btn, token);
+        else { status.textContent = 'Could not start ' + btn.getAttribute('data-name'); stopAll(); }
+      });
+    } else {
+      stationState[btn.getAttribute('data-name')] = 'sync';
+      setViz('sync', true);
+      onStarted(btn);
+    }
+  }
+  var btns = document.querySelectorAll('.station');
+  for (var i = 0; i < btns.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () {
+        stopVideo();
+        if (current === btn) { stopAll(); status.textContent = 'Tap a station to play'; return; }
+        stopAll();
+        current = btn;
+        clickToken++;
+        var name = btn.getAttribute('data-name');
+        status.textContent = 'Connecting to ' + name + '\u2026';
+        if (stationState[name] === 'plain') { setViz('plain', false); startPlain(btn); }
+        else { setViz('sync', false); attemptSync(btn); }
+      });
+    })(btns[i]);
+  }
+  window.onYouTubeIframeAPIReady = function () {
+    try {
+      tgPlayer = new YT.Player('tg-player', { events: { 'onStateChange': function (e) {
+        if (e.data === YT.PlayerState.PLAYING) { stopAll(); status.textContent = 'Watching: Typical Gamer'; }
+      } } });
+    } catch (err) {}
+  };
+})();
+</script>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+(function () {
+  var canvas = document.getElementById('bg3d');
+  if (!canvas) return;
+  try {
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 14;
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    var dir = new THREE.DirectionalLight(0xfff1d6, 1.3);
+    dir.position.set(5, 8, 6);
+    scene.add(dir);
+    var gold = new THREE.PointLight(0xf59e0b, 30, 40);
+    gold.position.set(-7, 4, 4);
+    scene.add(gold);
+    var teal = new THREE.PointLight(0x14b8a6, 25, 40);
+    teal.position.set(7, -3, 3);
+    scene.add(teal);
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    var labelColors = [0xc9a227, 0xe11d48, 0x14b8a6, 0x8b5cf6, 0xf5f0e1, 0x38bdf8];
+    var records = [];
+    for (var i = 0; i < 6; i++) {
+      var g = new THREE.Group();
+      var disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.15, 1.15, 0.06, 48),
+        new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.25, roughness: 0.35 })
+      );
+      var label = new THREE.Mesh(
+        new THREE.CircleGeometry(0.4, 32),
+        new THREE.MeshStandardMaterial({ color: labelColors[i % labelColors.length], metalness: 0.1, roughness: 0.5 })
+      );
+      label.rotation.x = -Math.PI / 2;
+      label.position.y = 0.035;
+      var hole = new THREE.Mesh(
+        new THREE.CircleGeometry(0.05, 16),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+      );
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.y = 0.04;
+      disc.add(label);
+      disc.add(hole);
+      [0.62, 0.85].forEach(function (r) {
+        var ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.008, 8, 64), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.032;
+        disc.add(ring);
+      });
+      g.add(disc);
+      g.position.set(rand(-6, 6), rand(-3.5, 4.5), rand(-3, 1));
+      g.rotation.set(rand(-0.6, 0.6), rand(-0.6, 0.6), rand(-0.4, 0.4));
+      g.userData = { disc: disc, speed: rand(0.004, 0.01), bob: rand(0, Math.PI * 2), y0: g.position.y };
+      scene.add(g);
+      records.push(g);
+    }
+
+    function noteTexture(ch, color) {
+      var c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      var x = c.getContext('2d');
+      x.font = '96px "Segoe UI Symbol", "Apple Symbols", serif';
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.fillStyle = color;
+      x.fillText(ch, 64, 70);
+      return new THREE.CanvasTexture(c);
+    }
+    var notes = [];
+    var noteChars = ['\u266A', '\u266B'];
+    var noteColors = ['#fbbf24', '#5eead4', '#e6e6e6'];
+    for (var n = 0; n < 9; n++) {
+      var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTexture(noteChars[n % 2], noteColors[n % 3]), transparent: true, opacity: 0.8, depthWrite: false }));
+      sp.scale.setScalar(rand(0.7, 1.3));
+      sp.position.set(rand(-7, 7), rand(-6, 6), rand(-2, 1));
+      sp.userData = { speed: rand(0.15, 0.45), sway: rand(0, Math.PI * 2), x0: sp.position.x };
+      scene.add(sp);
+      notes.push(sp);
+    }
+
+    var BAR_N = 24;
+    var barColors = [0xc9a227, 0x14b8a6, 0x8b5cf6, 0x38bdf8, 0xf43f5e];
+    var bars = [];
+    var barGeo = new THREE.BoxGeometry(1, 1, 1);
+    for (var b = 0; b < BAR_N; b++) {
+      var m = new THREE.Mesh(barGeo, new THREE.MeshStandardMaterial({ color: barColors[b % barColors.length], metalness: 0.2, roughness: 0.4, emissive: barColors[b % barColors.length], emissiveIntensity: 0.25 }));
+      scene.add(m);
+      bars.push({ mesh: m, cur: 0.15 });
+    }
+    function layoutBars() {
+      var aspect = window.innerWidth / window.innerHeight;
+      var visW = 2 * 14 * Math.tan(Math.PI / 6) * aspect;
+      var rowW = visW * 0.94;
+      var step = rowW / BAR_N;
+      for (var i = 0; i < BAR_N; i++) {
+        bars[i].mesh.scale.x = step * 0.62;
+        bars[i].mesh.position.x = -rowW / 2 + (i + 0.5) * step;
+        bars[i].mesh.position.z = -1;
+      }
+    }
+    layoutBars();
+    var BAR_BASE_Y = -7.2;
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var clock = new THREE.Clock();
+    var running = true;
+    var freqData = null;
+    function frame() {
+      if (!running) return;
+      requestAnimationFrame(frame);
+      var t = clock.getElapsedTime();
+      var viz = window.radioViz || {};
+      var playing = !!viz.playing;
+      var analyser = (viz.mode === 'sync') ? viz.analyser : null;
+      if (analyser) {
+        if (!freqData || freqData.length !== analyser.frequencyBinCount) freqData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(freqData);
+      }
+      for (var i = 0; i < BAR_N; i++) {
+        var target;
+        if (analyser && freqData) {
+          var bin = Math.floor(i * freqData.length / BAR_N);
+          target = 0.15 + (freqData[bin] / 255) * 3.4;
+        } else if (playing) {
+          var beat = Math.pow(Math.max(0, Math.sin(t * 2.1)), 3);
+          target = 0.25 + (0.5 + 0.5 * Math.sin(t * 2.6 + i * 0.55)) * (0.9 + beat * 1.8);
+        } else {
+          target = 0.14 + 0.06 * Math.sin(t * 0.8 + i * 0.3);
+        }
+        var bar = bars[i];
+        bar.cur += (target - bar.cur) * 0.35;
+        bar.mesh.scale.y = Math.max(0.05, bar.cur);
+        bar.mesh.position.y = BAR_BASE_Y + bar.cur / 2;
+      }
+      for (var r = 0; r < records.length; r++) {
+        var rec = records[r];
+        rec.userData.disc.rotation.y += rec.userData.speed * (playing ? 2.2 : 1);
+        rec.position.y = rec.userData.y0 + Math.sin(t * 0.4 + rec.userData.bob) * 0.35;
+      }
+      for (var k = 0; k < notes.length; k++) {
+        var nt = notes[k];
+        nt.position.y += nt.userData.speed * 0.016;
+        nt.position.x = nt.userData.x0 + Math.sin(t * 0.5 + nt.userData.sway) * 0.5;
+        if (nt.position.y > 7) { nt.position.y = -7; }
+      }
+      camera.position.x = Math.sin(t * 0.08) * 0.5;
+      camera.lookAt(0, 0, 0);
+      renderer.render(scene, camera);
+    }
+    function resize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      layoutBars();
+    }
+    window.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { running = false; }
+      else if (!reduced) { running = true; frame(); }
+    });
+    if (reduced) { renderer.render(scene, camera); } else { frame(); }
+  } catch (e) { try { canvas.remove(); } catch (e2) {} }
+})();
+</script>
+
+</body>
+</html>
