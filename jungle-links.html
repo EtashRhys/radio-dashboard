@@ -57,6 +57,16 @@
     border-color: #58a6ff;
     box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
   }
+  #hot97 {
+    background: #ff7a29;
+    border-color: #ff7a29;
+  }
+  #hot97 .freq { color: #1a0a00; }
+  #hot97 .name { color: #4a2400; }
+  #hot97.playing {
+    border-color: #ffc27a;
+    box-shadow: 0 0 24px rgba(255, 122, 41, 0.45);
+  }
   .station .freq {
     font-size: 2rem;
     font-weight: 800;
@@ -97,6 +107,11 @@
   <h1>Jungle's Links</h1>
   <div class="status" id="status">Tap something to open</div>
 
+  <button class="station" id="hot97" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/WQHTFMAAC_SC" data-name="HOT 97">
+    <div class="freq"><span class="dot"></span>HOT 97</div>
+    <div class="name">New York &middot; Hip-Hop</div>
+  </button>
+
   <a class="station" href="https://www.youtube.com/@TheBasementYard" target="_blank" rel="noopener">
     <div class="freq">The Basement Yard</div>
     <div class="name">YouTube &middot; Comedy podcast</div>
@@ -111,11 +126,6 @@
     <div class="freq">Santagato Studios</div>
     <div class="name">YouTube &middot; Comedy</div>
   </a>
-
-  <button class="station" id="hot97" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/WQHTFMAAC_SC" data-name="HOT 97">
-    <div class="freq"><span class="dot"></span>HOT 97</div>
-    <div class="name">New York &middot; Hip-Hop</div>
-  </button>
 
   <div class="hint">Tap HOT 97 again to stop.</div>
 
