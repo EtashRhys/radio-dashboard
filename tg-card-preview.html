@@ -95,12 +95,46 @@
   }
   .tg-card { padding: 0; overflow: hidden; cursor: default; }
   .tg-card:active { transform: none; }
+  .tg-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px 12px;
+  }
   .tg-card-label {
     font-size: 0.9rem;
     color: #8b949e;
-    padding: 20px 24px 12px;
-    text-align: center;
   }
+  .live-btn {
+    flex: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    background: #e11d48;
+    border: 1px solid #e11d48;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .live-btn.live-mode {
+    background: #161b22;
+    border-color: #30363d;
+    color: #e6e6e6;
+  }
+  .live-btn.live-mode .live-dot { display: none; }
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  #tg-player-live { display: none; }
   .tg-card iframe {
     display: block;
     width: 100%;
@@ -164,8 +198,9 @@
   </button>
 
   <div class="station tg-card" id="tg-card">
-    <div class="tg-card-label">Typical Gamer &middot; Live on YouTube</div>
+    <div class="tg-card-head"><div class="tg-card-label">Typical Gamer</div><button class="live-btn" id="live-btn" type="button"><span class="live-dot"></span><span id="live-btn-text">Check if live</span></button></div>
     <iframe id="tg-player" src="https://www.youtube.com/embed/videoseries?list=UU2wKfjlioOCLP4xQMOWNcgg&amp;enablejsapi=1" title="Typical Gamer live stream" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  <iframe id="tg-player-live" src="https://www.youtube.com/embed/live_stream?channel=UC2wKfjlioOCLP4xQMOWNcgg&amp;enablejsapi=1" title="Typical Gamer live feed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     <a class="tg-link" href="https://www.youtube.com/@TypicalGamer" target="_blank" rel="noopener">Open Typical Gamer on YouTube</a>
   </div>
 
@@ -176,6 +211,9 @@
 (function () {
   var status = document.getElementById('status');
   var tgPlayer = null;
+  var tgPlayerLive = null;
+  var liveMode = false;
+  var liveBtn = document.getElementById('live-btn');
   var current = null;
   var audio = new Audio();
   audio.preload = 'none';
@@ -204,6 +242,36 @@
   }
   function stopVideo() {
     try { if (tgPlayer && tgPlayer.pauseVideo) tgPlayer.pauseVideo(); } catch (e) {}
+    try { if (tgPlayerLive && tgPlayerLive.pauseVideo) tgPlayerLive.pauseVideo(); } catch (e) {}
+    showLatest();
+  }
+  function showLatest() {
+    liveMode = false;
+    var liveFrame = document.getElementById('tg-player-live');
+    var mainFrame = document.getElementById('tg-player');
+    try { if (tgPlayerLive && tgPlayerLive.pauseVideo) tgPlayerLive.pauseVideo(); } catch (e) {}
+    if (liveFrame) liveFrame.style.display = 'none';
+    if (mainFrame) mainFrame.style.display = 'block';
+    if (liveBtn) liveBtn.classList.remove('live-mode');
+    var bt = document.getElementById('live-btn-text');
+    if (bt) bt.textContent = 'Check if live';
+    var card = document.getElementById('tg-card');
+    if (card) card.classList.remove('playing');
+    status.textContent = 'Tap a station to play';
+  }
+  function showLive() {
+    liveMode = true;
+    var liveFrame = document.getElementById('tg-player-live');
+    var mainFrame = document.getElementById('tg-player');
+    try { if (tgPlayer && tgPlayer.pauseVideo) tgPlayer.pauseVideo(); } catch (e) {}
+    if (mainFrame) mainFrame.style.display = 'none';
+    if (liveFrame) liveFrame.style.display = 'block';
+    if (liveBtn) liveBtn.classList.add('live-mode');
+    var bt = document.getElementById('live-btn-text');
+    if (bt) bt.textContent = 'Back to latest';
+    var card = document.getElementById('tg-card');
+    if (card) card.classList.remove('playing');
+    status.textContent = 'Live feed — tap play to watch';
   }
   function onStarted(btn) {
     btn.classList.add('playing');
@@ -302,12 +370,21 @@
       });
     })(btns[i]);
   }
+  if (liveBtn) {
+    liveBtn.addEventListener('click', function () {
+      if (!liveMode) { stopAll(); showLive(); }
+      else { showLatest(); }
+    });
+  }
   window.onYouTubeIframeAPIReady = function () {
     try {
-      tgPlayer = new YT.Player('tg-player', { events: { 'onStateChange': function (e) {
-        if (e.data === YT.PlayerState.PLAYING) { stopAll(); var tgCard = document.getElementById('tg-card'); if (tgCard) tgCard.classList.add('playing'); status.textContent = 'Watching: Typical Gamer'; }
-        else { var tgCard2 = document.getElementById('tg-card'); if (tgCard2) tgCard2.classList.remove('playing'); }
-      } } });
+      var handler = function (e) {
+        var tgCard = document.getElementById('tg-card');
+        if (e.data === YT.PlayerState.PLAYING) { stopAll(); if (tgCard) tgCard.classList.add('playing'); status.textContent = 'Watching: Typical Gamer'; }
+        else if (tgCard) { tgCard.classList.remove('playing'); }
+      };
+      tgPlayer = new YT.Player('tg-player', { events: { 'onStateChange': handler } });
+      tgPlayerLive = new YT.Player('tg-player-live', { events: { 'onStateChange': handler } });
     } catch (err) {}
   };
 })();
