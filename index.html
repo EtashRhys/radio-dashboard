@@ -313,12 +313,17 @@
 <script>
 (function () {
   var btns = document.querySelectorAll('.station');
+  var COLOR_SETS = {
+    '102.1 The Edge': ['#0f2a4a', '#2f7de1', '#7cc4ff'],
+    'Q107': ['#2a1200', '#ff7a29', '#ffc27a'],
+    'AM 800 CKLW': ['#2b0008', '#ff2e4d', '#ff9aa8']
+  };
   var vizs = [];
   for (var i = 0; i < btns.length; i++) {
     var c = document.createElement('canvas');
     c.className = 'viz';
     btns[i].appendChild(c);
-    vizs.push({ btn: btns[i], canvas: c, ctx: c.getContext('2d'), cur: [], dpr: 1, w: 0, h: 0 });
+    vizs.push({ btn: btns[i], canvas: c, ctx: c.getContext('2d'), cur: [], dpr: 1, w: 0, h: 0, stops: COLOR_SETS[btns[i].getAttribute('data-name')] || COLOR_SETS['102.1 The Edge'] });
   }
   function sizeAll() {
     for (var i = 0; i < vizs.length; i++) {
@@ -358,9 +363,9 @@
       var step = v.w / BAR_N;
       var bw = step * 0.62;
       var grad = ctx.createLinearGradient(0, v.h, 0, 0);
-      grad.addColorStop(0, '#0f2a4a');
-      grad.addColorStop(0.6, '#2f7de1');
-      grad.addColorStop(1, '#7cc4ff');
+      grad.addColorStop(0, v.stops[0]);
+      grad.addColorStop(0.6, v.stops[1]);
+      grad.addColorStop(1, v.stops[2]);
       ctx.fillStyle = grad;
       for (var b = 0; b < BAR_N; b++) {
         var target;
