@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Radio</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Radio">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="shortcut icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: radial-gradient(120% 90% at 50% 0%, #122a4a 0%, #0d1117 55%, #05070c 100%);
+    color: #e6e6e6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8b949e;
+    margin-bottom: 12px;
+  }
+  .status {
+    font-size: 0.85rem;
+    color: #58a6ff;
+    margin-bottom: 24px;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .station {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+    color: #fff;
+    background: rgba(22, 27, 34, 0.85);
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .station:active { transform: scale(0.97); }
+  .station.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .station .freq {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .station .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3fb950;
+    display: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .station.playing .dot { display: inline-block; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .station .name {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-top: 6px;
+  }
+  .station .note {
+    font-size: 0.8rem;
+    color: #58a6ff;
+    margin-top: 6px;
+  }
+  .tg {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .tg-label {
+    font-size: 0.9rem;
+    color: #8b949e;
+    margin-bottom: 10px;
+  }
+  .tg iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    background: #000;
+  }
+  .tg-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #58a6ff;
+    text-decoration: none;
+  }
+  .hint {
+    margin-top: 24px;
+    font-size: 0.8rem;
+    color: #484f58;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #bg3d {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  body > *:not(#bg3d) { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+  <canvas id="bg3d"></canvas>
+  <h1>My Radio</h1>
+  <div class="status" id="status">Tap a station to play</div>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CFNYFM-MP3?args=web_02" data-name="102.1 The Edge">
+    <div class="freq"><span class="dot"></span>102.1 The Edge</div>
+    <div class="name">Toronto &middot; Alternative Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CILQFM-MP3?args=web_02" data-name="Q107">
+    <div class="freq"><span class="dot"></span>Q107</div>
+    <div class="name">Toronto &middot; 107.1 FM &middot; Classic Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/CKLWAMAAC.aac" data-name="AM 800 CKLW">
+    <div class="freq"><span class="dot"></span>AM 800 CKLW</div>
+    <div class="name">Windsor &middot; News / Talk</div>
+    <div class="note">Coast to Coast AM overnights</div>
+  </button>
+
+  <div class="tg">
+    <div class="tg-label">Typical Gamer &middot; Live on YouTube</div>
+    <iframe id="tg-player" src="https://www.youtube.com/embed/live_stream?channel=UC2wKfjlioOCLP4xQMOWNcgg&amp;enablejsapi=1" title="Typical Gamer live stream" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <a class="tg-link" href="https://www.youtube.com/@TypicalGamer" target="_blank" rel="noopener">Open Typical Gamer on YouTube</a>
+  </div>
+
+  <div class="hint">Tap again to stop.<br>More stations coming.</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function () {
+  var audio = new Audio();
+  audio.preload = 'none';
+  var current = null;
+  var status = document.getElementById('status');
+  var tgPlayer = null;
+
+  function stopAll() {
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    var btns = document.querySelectorAll('.station');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('playing');
+    current = null;
+  }
+  function stopVideo() {
+    try { if (tgPlayer && tgPlayer.pauseVideo) tgPlayer.pauseVideo(); } catch (e) {}
+  }
+
+  var btns = document.querySelectorAll('.station');
+  for (var i = 0; i < btns.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () {
+        stopVideo();
+        if (current === btn) {
+          stopAll();
+          status.textContent = 'Tap a station to play';
+          return;
+        }
+        stopAll();
+        current = btn;
+        status.textContent = 'Connecting to ' + btn.getAttribute('data-name') + '\u2026';
+        audio.src = btn.getAttribute('data-stream');
+        var p = audio.play();
+        if (p && p.then) {
+          p.then(function () {
+            btn.classList.add('playing');
+            status.textContent = 'Now playing: ' + btn.getAttribute('data-name');
+          }).catch(function () {
+            status.textContent = 'Could not start ' + btn.getAttribute('data-name');
+            stopAll();
+          });
+        } else {
+          btn.classList.add('playing');
+          status.textContent = 'Now playing: ' + btn.getAttribute('data-name');
+        }
+      });
+    })(btns[i]);
+  }
+
+  audio.addEventListener('error', function () {
+    if (current) {
+      status.textContent = 'Stream failed to load';
+      stopAll();
+    }
+  });
+  window.onYouTubeIframeAPIReady = function () {
+    try {
+      tgPlayer = new YT.Player('tg-player', { events: { 'onStateChange': function (e) {
+        if (e.data === YT.PlayerState.PLAYING) {
+          stopAll();
+          status.textContent = 'Watching: Typical Gamer';
+        }
+      } } });
+    } catch (err) {}
+  };
+})();
+</script>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+(function () {
+  var canvas = document.getElementById('bg3d');
+  if (!canvas) return;
+  try {
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 14;
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    var dir = new THREE.DirectionalLight(0xffffff, 1.4);
+    dir.position.set(5, 8, 6);
+    scene.add(dir);
+    var blue = new THREE.PointLight(0x38bdf8, 30, 40);
+    blue.position.set(-8, -4, 4);
+    scene.add(blue);
+    var pink = new THREE.PointLight(0xe879f9, 25, 40);
+    pink.position.set(8, 5, 2);
+    scene.add(pink);
+    var colors = [0x7dd3fc, 0xc4b5fd, 0xc9a227, 0x5eead4, 0xf0f9ff, 0x38bdf8];
+    var crystals = [];
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    for (var i = 0; i < 16; i++) {
+      var r = rand(0.5, 1.4);
+      var geo = (i % 2 === 0) ? new THREE.OctahedronGeometry(r, 0) : new THREE.IcosahedronGeometry(r, 0);
+      var mat = new THREE.MeshPhysicalMaterial({ color: colors[i % colors.length], metalness: 0.15, roughness: 0.08, transparent: true, opacity: 0.9, clearcoat: 1, clearcoatRoughness: 0.15, flatShading: true });
+      var m = new THREE.Mesh(geo, mat);
+      m.position.set(rand(-7, 7), rand(-5, 5), rand(-4, 2));
+      m.userData = { rx: rand(-0.003, 0.003), ry: rand(0.002, 0.006), bob: rand(0, Math.PI * 2), bobSpeed: rand(0.2, 0.5), y0: m.position.y };
+      scene.add(m);
+      crystals.push(m);
+    }
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var clock = new THREE.Clock();
+    var running = true;
+    function frame() {
+      if (!running) return;
+      requestAnimationFrame(frame);
+      var t = clock.getElapsedTime();
+      for (var j = 0; j < crystals.length; j++) {
+        var c = crystals[j];
+        c.rotation.x += c.userData.rx;
+        c.rotation.y += c.userData.ry;
+        c.position.y = c.userData.y0 + Math.sin(t * c.userData.bobSpeed + c.userData.bob) * 0.4;
+      }
+      camera.position.x = Math.sin(t * 0.1) * 0.6;
+      camera.lookAt(0, 0, 0);
+      renderer.render(scene, camera);
+    }
+    function resize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { running = false; }
+      else if (!reduced) { running = true; frame(); }
+    });
+    if (reduced) { renderer.render(scene, camera); } else { frame(); }
+  } catch (e) { try { canvas.remove(); } catch (e2) {} }
+})();
+</script>
+</body>
+</html>
