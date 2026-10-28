@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Radio</title>
+<meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Radio">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="shortcut icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    color: #e6e6e6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8b949e;
+    margin-bottom: 12px;
+  }
+  .status {
+    font-size: 0.85rem;
+    color: #58a6ff;
+    margin-bottom: 24px;
+    min-height: 1.2em;
+    text-align: center;
+  }
+  .station {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+    color: #fff;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .station:active { transform: scale(0.97); }
+  .station.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .station .freq {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .station .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3fb950;
+    display: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .station.playing .dot { display: inline-block; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .station .name {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-top: 6px;
+  }
+  .station .note {
+    font-size: 0.8rem;
+    color: #58a6ff;
+    margin-top: 6px;
+  }
+  .tg-card { padding: 0; overflow: hidden; cursor: default; }
+  .tg-card:active { transform: none; }
+  .tg-card-label {
+    font-size: 0.9rem;
+    color: #8b949e;
+    padding: 20px 24px 12px;
+    text-align: center;
+  }
+  .tg-card iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    background: #000;
+  }
+  .tg-card .tg-link {
+    display: block;
+    padding: 12px 24px 20px;
+    font-size: 0.85rem;
+    color: #58a6ff;
+    text-decoration: none;
+    text-align: center;
+  }
+  .tg-card.playing {
+    border-color: #58a6ff;
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.25);
+  }
+  .hint {
+    margin-top: 24px;
+    font-size: 0.8rem;
+    color: #484f58;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .station { position: relative; overflow: hidden; }
+  .station .viz {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .station .freq, .station .name, .station .note {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+</style>
+</head>
+<body>
+  <h1>My Radio</h1>
+  <div class="status" id="status">Tap a station to play</div>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CFNYFM-MP3?args=web_02" data-name="102.1 The Edge">
+    <div class="freq"><span class="dot"></span>102.1 The Edge</div>
+    <div class="name">Toronto &middot; Alternative Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://corus.leanstream.co/CILQFM-MP3?args=web_02" data-name="Q107">
+    <div class="freq"><span class="dot"></span>Q107</div>
+    <div class="name">Toronto &middot; 107.1 FM &middot; Classic Rock</div>
+  </button>
+
+  <button class="station" data-stream="https://playerservices.streamtheworld.com/api/livestream-redirect/CKLWAMAAC.aac" data-name="AM 800 CKLW">
+    <div class="freq"><span class="dot"></span>AM 800 CKLW</div>
+    <div class="name">Windsor &middot; News / Talk</div>
+    <div class="note">Coast to Coast AM overnights</div>
+  </button>
+
+  <div class="station tg-card" id="tg-card">
+    <div class="tg-card-label">Typical Gamer &middot; Live on YouTube</div>
+    <iframe id="tg-player" src="https://www.youtube.com/embed/live_stream?channel=UC2wKfjlioOCLP4xQMOWNcgg&amp;enablejsapi=1" title="Typical Gamer live stream" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <a class="tg-link" href="https://www.youtube.com/@TypicalGamer" target="_blank" rel="noopener">Open Typical Gamer on YouTube</a>
+  </div>
+
+  <div class="hint">Tap again to stop.<br>More stations coming.</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function () {
+  var status = document.getElementById('status');
+  var tgPlayer = null;
+  var current = null;
+  var audio = new Audio();
+  audio.preload = 'none';
+  var audioCtx = null, analyser = null, audioElHasGraph = false;
+  var vizMode = 'idle';
+  var stationState = {};
+  window.radioViz = { playing: false, analyser: null, mode: 'idle', current: null };;
+  var clickToken = 0;
+  var fellBackToken = -1;
+
+  function setViz(mode, playing) {
+    vizMode = mode;
+    window.radioViz.mode = mode;
+    window.radioViz.playing = playing;
+    window.radioViz.analyser = (mode === 'sync') ? analyser : null;
+  }
+  function stopAll() {
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    var btns = document.querySelectorAll('.station');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('playing');
+    current = null;
+    window.radioViz.current = null;
+    setViz('idle', false);
+  }
+  function stopVideo() {
+    try { if (tgPlayer && tgPlayer.pauseVideo) tgPlayer.pauseVideo(); } catch (e) {}
+  }
+  function onStarted(btn) {
+    btn.classList.add('playing');
+    status.textContent = 'Now playing: ' + btn.getAttribute('data-name');
+  }
+  function startPlain(btn) {
+    audio.removeAttribute('crossorigin');
+    audio.src = btn.getAttribute('data-stream');
+    var p = audio.play();
+    if (p && p.then) {
+      p.then(function () { setViz('plain', true); onStarted(btn); }).catch(function () {
+        status.textContent = 'Could not start ' + btn.getAttribute('data-name');
+        stopAll();
+      });
+    } else { setViz('plain', true); onStarted(btn); }
+  }
+  function fallbackToPlain(btn, token) {
+    if (token !== clickToken || token === fellBackToken) return;
+    fellBackToken = token;
+    var name = btn.getAttribute('data-name');
+    stationState[name] = 'plain';
+    try { audio.pause(); } catch (e) {}
+    audio.removeAttribute('src');
+    try { audio.load(); } catch (e) {}
+    audio = new Audio();
+    audio.preload = 'none';
+    audioElHasGraph = false;
+    bindError(audio);
+    status.textContent = 'Connecting to ' + name + '\u2026';
+    startPlain(btn);
+  }
+  function bindError(el) {
+    el.addEventListener('error', function () {
+      if (!current) return;
+      var btn = current;
+      var name = btn.getAttribute('data-name');
+      if (vizMode === 'sync' && stationState[name] !== 'sync') {
+        fallbackToPlain(btn, clickToken);
+      } else {
+        status.textContent = 'Stream failed to load';
+        stopAll();
+      }
+    });
+  }
+  bindError(audio);
+  function attemptSync(btn) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!analyser) analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      if (!audioElHasGraph) {
+        var src = audioCtx.createMediaElementSource(audio);
+        src.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        audioElHasGraph = true;
+      }
+      if (audioCtx.resume) audioCtx.resume();
+    } catch (e) {
+      stationState[btn.getAttribute('data-name')] = 'plain';
+      startPlain(btn);
+      return;
+    }
+    var token = clickToken;
+    audio.crossOrigin = 'anonymous';
+    audio.src = btn.getAttribute('data-stream');
+    var p = audio.play();
+    if (p && p.then) {
+      p.then(function () {
+        stationState[btn.getAttribute('data-name')] = 'sync';
+        setViz('sync', true);
+        onStarted(btn);
+      }).catch(function () {
+        if (stationState[btn.getAttribute('data-name')] !== 'sync') fallbackToPlain(btn, token);
+        else { status.textContent = 'Could not start ' + btn.getAttribute('data-name'); stopAll(); }
+      });
+    } else {
+      stationState[btn.getAttribute('data-name')] = 'sync';
+      setViz('sync', true);
+      onStarted(btn);
+    }
+  }
+  var btns = document.querySelectorAll('.station');
+  for (var i = 0; i < btns.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () {
+        stopVideo();
+        if (current === btn) { stopAll(); status.textContent = 'Tap a station to play'; return; }
+        stopAll();
+        current = btn;
+        window.radioViz.current = btn;
+        clickToken++;
+        var name = btn.getAttribute('data-name');
+        status.textContent = 'Connecting to ' + name + '\u2026';
+        if (stationState[name] === 'plain') { setViz('plain', false); startPlain(btn); }
+        else { setViz('sync', false); attemptSync(btn); }
+      });
+    })(btns[i]);
+  }
+  window.onYouTubeIframeAPIReady = function () {
+    try {
+      tgPlayer = new YT.Player('tg-player', { events: { 'onStateChange': function (e) {
+        if (e.data === YT.PlayerState.PLAYING) { stopAll(); var tgCard = document.getElementById('tg-card'); if (tgCard) tgCard.classList.add('playing'); status.textContent = 'Watching: Typical Gamer'; }
+        else { var tgCard2 = document.getElementById('tg-card'); if (tgCard2) tgCard2.classList.remove('playing'); }
+      } } });
+    } catch (err) {}
+  };
+})();
+</script>
+
+<script>
+(function () {
+  var btns = document.querySelectorAll('button.station');
+  var COLOR_SETS = {
+    '102.1 The Edge': ['#0f2a4a', '#2f7de1', '#7cc4ff'],
+    'Q107': ['#2a1200', '#ff7a29', '#ffc27a'],
+    'AM 800 CKLW': ['#2b0008', '#ff2e4d', '#ff9aa8']
+  };
+  var vizs = [];
+  for (var i = 0; i < btns.length; i++) {
+    var c = document.createElement('canvas');
+    c.className = 'viz';
+    btns[i].appendChild(c);
+    vizs.push({ btn: btns[i], canvas: c, ctx: c.getContext('2d'), cur: [], dpr: 1, w: 0, h: 0, stops: COLOR_SETS[btns[i].getAttribute('data-name')] || COLOR_SETS['102.1 The Edge'] });
+  }
+  function sizeAll() {
+    for (var i = 0; i < vizs.length; i++) {
+      var v = vizs[i];
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var w = v.btn.clientWidth, h = v.btn.clientHeight;
+      if (!w || !h) continue;
+      v.canvas.width = Math.round(w * dpr);
+      v.canvas.height = Math.round(h * dpr);
+      v.dpr = dpr;
+      v.w = w;
+      v.h = h;
+      v.cur = [];
+    }
+  }
+  sizeAll();
+  window.addEventListener('resize', sizeAll);
+  window.addEventListener('load', sizeAll);
+  var BAR_N = 20;
+  var freqData = null;
+  function draw() {
+    requestAnimationFrame(draw);
+    var viz = window.radioViz || {};
+    var t = performance.now() / 1000;
+    for (var i = 0; i < vizs.length; i++) {
+      var v = vizs[i];
+      var ctx = v.ctx;
+      ctx.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
+      ctx.clearRect(0, 0, v.w, v.h);
+      var active = (viz.current === v.btn && viz.playing);
+      if (!active) continue;
+      var analyser = (viz.mode === 'sync') ? viz.analyser : null;
+      if (analyser) {
+        if (!freqData || freqData.length !== analyser.frequencyBinCount) freqData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(freqData);
+      }
+      var step = v.w / BAR_N;
+      var bw = step * 0.62;
+      var grad = ctx.createLinearGradient(0, v.h, 0, 0);
+      grad.addColorStop(0, v.stops[0]);
+      grad.addColorStop(0.6, v.stops[1]);
+      grad.addColorStop(1, v.stops[2]);
+      ctx.fillStyle = grad;
+      for (var b = 0; b < BAR_N; b++) {
+        var target;
+        if (analyser && freqData) {
+          var bin = Math.floor(b * freqData.length / BAR_N);
+          target = 0.08 + (freqData[bin] / 255) * (v.h * 0.72);
+        } else {
+          var beat = Math.pow(Math.max(0, Math.sin(t * 2.1)), 3);
+          target = v.h * 0.08 + (0.5 + 0.5 * Math.sin(t * 2.6 + b * 0.55)) * (v.h * 0.28 + beat * v.h * 0.35);
+        }
+        var cur = v.cur[b] || 0;
+        cur += (target - cur) * 0.35;
+        v.cur[b] = cur;
+        var x = b * step + (step - bw) / 2;
+        var hh = Math.max(2, cur);
+        ctx.fillRect(x, v.h - hh, bw, hh);
+      }
+    }
+  }
+  draw();
+})();
+</script>
+
+</body>
+</html>
