@@ -47,7 +47,7 @@
     max-width: 420px;
     font-family: inherit;
     color: #fff;
-    background: rgba(22, 27, 34, 0.85);
+    background: rgba(22, 27, 34, 0.55);
     border: 1px solid #30363d;
     border-radius: 16px;
     padding: 28px 24px;
@@ -385,7 +385,7 @@ import * as THREE from 'three';
     var noteChars = ['\u266A', '\u266B'];
     var noteColors = ['#fbbf24', '#5eead4', '#e6e6e6'];
     for (var n = 0; n < 9; n++) {
-      var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTexture(noteChars[n % 2], noteColors[n % 3]), transparent: true, opacity: 0.8, depthWrite: false }));
+      var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: noteTexture(noteChars[n % 2], noteColors[n % 3]), transparent: true, opacity: 0.95, depthWrite: false }));
       sp.scale.setScalar(rand(0.7, 1.3));
       sp.position.set(rand(-7, 7), rand(-6, 6), rand(-2, 1));
       sp.userData = { speed: rand(0.15, 0.45), sway: rand(0, Math.PI * 2), x0: sp.position.x };
@@ -398,7 +398,7 @@ import * as THREE from 'three';
     var bars = [];
     var barGeo = new THREE.BoxGeometry(1, 1, 1);
     for (var b = 0; b < BAR_N; b++) {
-      var m = new THREE.Mesh(barGeo, new THREE.MeshStandardMaterial({ color: barColors[b % barColors.length], metalness: 0.2, roughness: 0.4, emissive: barColors[b % barColors.length], emissiveIntensity: 0.25 }));
+      var m = new THREE.Mesh(barGeo, new THREE.MeshStandardMaterial({ color: barColors[b % barColors.length], metalness: 0.2, roughness: 0.4, emissive: barColors[b % barColors.length], emissiveIntensity: 0.5 }));
       scene.add(m);
       bars.push({ mesh: m, cur: 0.15 });
     }
