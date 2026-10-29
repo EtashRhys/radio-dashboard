@@ -499,5 +499,124 @@
 })();
 </script>
 
+<script>
+/* My 10 usage tracking: first-party, anonymous aggregate counts only.
+   Page slug is set per page at build time. Sends visit / click / share /
+   media-seconds / visible-seconds to Brad's own collector. Never blocks
+   the page: every call is guarded, failures are silent, and no listener
+   here calls preventDefault (mailto and link taps still fire normally). */
+(function () {
+  try {
+    var SLUG = 'jungle-links';
+    var ENDPOINT = 'https://ucii.sportgen-ai.com/track/event';
+    var session = null;
+    try {
+      session = sessionStorage.getItem('my10-track-session');
+      if (!session) {
+        session = 's' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem('my10-track-session', session);
+      }
+    } catch (e) { session = 's' + Math.random().toString(36).slice(2); }
+    function send(type, item, seconds, ref) {
+      try {
+        var payload = JSON.stringify({ type: type, page: SLUG, session: session,
+          item: item || null,
+          seconds: (seconds == null ? null : Math.round(seconds * 10) / 10),
+          ref: ref || null });
+        // fetch with keepalive + credentials omitted: the collector's CORS
+        // answers "*" which a credentialed beacon (sendBeacon) rejects,
+        // so beacons never arrive. keepalive survives pagehide like a
+        // beacon, without the credential trap. No fetch, no send.
+        if (window.fetch) {
+          fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: payload, keepalive: true, credentials: 'omit' }).catch(function () {});
+        }
+      } catch (e) {}
+    }
+    var mediaOpen = {};
+    var mediaPending = {};
+    var pagePending = 0;
+    var visibleSince = (document.visibilityState === 'visible') ? Date.now() : null;
+    function mediaStart(item) { try { if (!mediaOpen[item]) mediaOpen[item] = Date.now(); } catch (e) {} }
+    function mediaStop(item) {
+      try {
+        var t = mediaOpen[item];
+        if (t) { mediaPending[item] = (mediaPending[item] || 0) + (Date.now() - t) / 1000; delete mediaOpen[item]; }
+      } catch (e) {}
+    }
+    function flush() {
+      try {
+        var now = Date.now();
+        for (var item in mediaOpen) {
+          mediaPending[item] = (mediaPending[item] || 0) + (now - mediaOpen[item]) / 1000;
+          mediaOpen[item] = now;
+        }
+        for (var m in mediaPending) { if (mediaPending[m] > 0) send('media', m, mediaPending[m]); }
+        mediaPending = {};
+        if (visibleSince) { pagePending += (now - visibleSince) / 1000; visibleSince = now; }
+        if (pagePending > 0) send('page', null, pagePending);
+        pagePending = 0;
+      } catch (e) {}
+    }
+    function flushFinal() {
+      try {
+        var now = Date.now();
+        for (var item in mediaOpen) {
+          mediaPending[item] = (mediaPending[item] || 0) + (now - mediaOpen[item]) / 1000;
+        }
+        mediaOpen = {};
+        for (var m in mediaPending) { if (mediaPending[m] > 0) send('media', m, mediaPending[m]); }
+        if (visibleSince) { pagePending += (now - visibleSince) / 1000; }
+        if (pagePending > 0) send('page', null, pagePending);
+      } catch (e) {}
+    }
+    window.__my10track = { mediaStart: mediaStart, mediaStop: mediaStop };
+    try {
+      var refHost = null;
+      if (document.referrer) {
+        var a = document.createElement('a');
+        a.href = document.referrer;
+        refHost = a.hostname || null;
+      }
+      send('visit', null, null, refHost);
+    } catch (e) { try { send('visit', null, null, null); } catch (e2) {} }
+    function bindClick(sel, getItem, type) {
+      try {
+        var els = document.querySelectorAll(sel);
+        for (var i = 0; i < els.length; i++) {
+          (function (el) {
+            el.addEventListener('click', function () { try { send(type || 'click', getItem(el)); } catch (e) {} });
+          })(els[i]);
+        }
+      } catch (e) {}
+    }
+    bindClick('button.station.audio', function (el) { return el.getAttribute('data-name'); });
+    bindClick('a.station', function (el) {
+      var f = el.querySelector('.freq');
+      return f ? f.textContent.trim() : 'link';
+    });
+    bindClick('.yt-link', function (el) {
+      var card = el.closest('.yt-card');
+      var l = card ? card.querySelector('.yt-card-label') : null;
+      return l ? l.textContent.trim() : 'YouTube';
+    });
+    bindClick('.share-pill', function () { return 'Share'; }, 'share');
+    bindClick('.contact-pill', function (el) {
+      var h = el.getAttribute('href') || '';
+      return (h.indexOf('mailto:') === 0) ? 'Contact Us' : el.textContent.trim();
+    });
+    document.addEventListener('visibilitychange', function () {
+      try {
+        if (document.visibilityState === 'hidden') {
+          if (visibleSince) { pagePending += (Date.now() - visibleSince) / 1000; visibleSince = null; }
+        } else { visibleSince = Date.now(); }
+      } catch (e) {}
+    });
+    setInterval(flush, 60000);
+    window.addEventListener('pagehide', flushFinal);
+  } catch (e) {}
+})();
+</script>
+
 </body>
 </html>
