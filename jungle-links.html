@@ -261,11 +261,13 @@
     current = null;
     window.radioViz.current = null;
     setViz('idle', false);
+    try { if (window.__my10track) window.__my10track.mediaStop('HOT 97'); } catch (e) {}
   }
   window.jlStopAudio = stopAll;
   function onStarted() {
     btn.classList.add('playing');
     status.textContent = 'Now playing: HOT 97';
+    try { if (window.__my10track) window.__my10track.mediaStart('HOT 97'); } catch (e) {}
   }
   function startPlain() {
     audio.removeAttribute('crossorigin');
@@ -485,10 +487,12 @@
           var handler = function (e) {
             if (e.data === YT.PlayerState.PLAYING) {
               stopAudio();
+              try { if (window.__my10track) window.__my10track.mediaStart(c.name); } catch (e) {}
               for (var m = 0; m < cards.length; m++) { if (cards[m] !== c) showLatest(cards[m]); }
               if (c.card) c.card.classList.add('playing');
               status.textContent = 'Watching: ' + c.name;
             } else if (c.card) { c.card.classList.remove('playing'); }
+            if (e.data !== YT.PlayerState.PLAYING) { try { if (window.__my10track) window.__my10track.mediaStop(c.name); } catch (e) {} }
           };
           c.latestPlayer = new YT.Player('yt-player-' + c.suffix, { events: { 'onStateChange': handler } });
           c.livePlayer = new YT.Player('yt-player-live-' + c.suffix, { events: { 'onStateChange': handler } });
